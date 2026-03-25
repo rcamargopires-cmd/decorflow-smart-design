@@ -1,5 +1,6 @@
 const MoodboardModule = ({ image, colors, setColors }) => {
     const [detecting, setDetecting] = React.useState(false);
+    const [composerItems, setComposerItems] = React.useState([]);
     
     // Default colors if none extracted
     const displayColors = colors.length > 0 ? colors : [
@@ -15,103 +16,154 @@ const MoodboardModule = ({ image, colors, setColors }) => {
         { name: 'Mármore Carrara', img: 'https://images.unsplash.com/photo-1615529328331-f8917597711f?auto=format&fit=crop&q=80&w=200', desc: 'Clássico Elegante' }
     ];
 
+    const addToComposer = (item, type) => {
+        if (composerItems.length < 6) {
+            setComposerItems([...composerItems, { ...item, type, id: Date.now() }]);
+        }
+    };
+
+    const removeFromComposer = (id) => {
+        setComposerItems(composerItems.filter(item => item.id !== id));
+    };
+
     return (
-        <div className="max-w-6xl mx-auto animate-slide-up">
+        <div className="max-w-6xl mx-auto animate-slide-up pb-20">
             <div className="text-center mb-12">
                 <span className="inline-block px-4 py-1.5 bg-gold/10 text-gold-dark rounded-full text-sm font-semibold mb-4 border border-gold/20">
                     Módulo de Harmonização
                 </span>
-                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">Moodboard <span className="text-gold italic font-light">Dinâmico</span></h2>
+                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">Moodboard <span className="text-gold italic font-light">Composer</span></h2>
                 <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-                    Identificamos as cores do seu móvel favorito e sugerimos a paleta perfeita de tintas e revestimentos.
+                    Arraste ou clique nos elementos para montar sua composição personalizada.
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-                {/* Identification Area */}
-                <div className="bg-white p-8 rounded-[40px] border border-gray-100 premium-shadow">
-                    <div className="mb-6 rounded-2xl overflow-hidden h-40 bg-gray-100 border border-gray-50 flex items-center justify-center">
-                        {image ? (
-                            <img src={image} className="w-full h-full object-cover" alt="Sua Foto" />
-                        ) : (
-                            <div className="text-gray-400 text-sm flex flex-col items-center gap-2">
-                                <i data-lucide="image-plus"></i>
-                                <span>Faça upload no IA Vision para analisar</span>
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex items-center justify-between mb-8">
-                        <h3 className="font-display font-bold text-2xl">Paleta Sugerida</h3>
-                        <button 
-                            onClick={() => { setDetecting(true); setTimeout(() => setDetecting(false), 1500); }}
-                            className="text-gold font-semibold flex items-center gap-2 hover:underline"
-                        >
-                            <i data-lucide="crosshair" className={detecting ? 'animate-spin' : ''}></i>
-                            {detecting ? 'Analisando...' : 'Re-detectar cores'}
-                        </button>
-                    </div>
-
-                    <div className="space-y-6">
-                        {displayColors.map((c) => (
-                            <div key={c.name} className="flex items-center gap-4 group">
-                                <div 
-                                    className="w-20 h-20 rounded-2xl shadow-inner transition-transform group-hover:scale-105" 
-                                    style={{ backgroundColor: c.color }}
-                                ></div>
-                                <div className="flex-grow">
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="font-bold text-graphite">{c.name}</h4>
-                                        <span className="text-xs font-mono text-gray-400">{c.color}</span>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                {/* Left: Sources (Colors & Textures) */}
+                <div className="lg:col-span-4 space-y-8">
+                    <div className="bg-white p-8 rounded-[40px] border border-gray-100 premium-shadow">
+                        <h3 className="font-display font-bold text-xl mb-6 flex items-center gap-2">
+                             <i data-lucide="palette" className="w-5 h-5 text-gold"></i>
+                             Cores Detectadas
+                        </h3>
+                        <div className="grid grid-cols-1 gap-4">
+                            {displayColors.map((c) => (
+                                <button 
+                                    key={c.name} 
+                                    onClick={() => addToComposer(c, 'color')}
+                                    className="flex items-center gap-4 group p-2 rounded-2xl hover:bg-gray-50 transition-all text-left"
+                                >
+                                    <div className="w-12 h-12 rounded-xl shadow-inner shrink-0" style={{ backgroundColor: c.color }}></div>
+                                    <div className="flex-grow">
+                                        <h4 className="font-bold text-sm text-graphite">{c.name}</h4>
+                                        <span className="text-[10px] uppercase tracking-wider text-gray-400">{c.type}</span>
                                     </div>
-                                    <p className="text-sm text-gray-500">{c.type}</p>
-                                    <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden">
-                                        <div className="bg-gold h-full rounded-full" style={{ width: c.type === 'Principal' ? '70%' : '30%' }}></div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Textures area */}
-                <div className="space-y-8">
-                    <div>
-                        <h3 className="font-display font-bold text-2xl mb-6">Texturas e Revestimentos</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {textures.map((t) => (
-                                <div key={t.name} className="group relative overflow-hidden rounded-3xl aspect-square border border-gray-100 premium-shadow hover:scale-[1.02] transition-all cursor-pointer">
-                                    <img src={t.img} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={t.name} />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-6">
-                                        <h4 className="text-white font-bold text-lg">{t.name}</h4>
-                                        <p className="text-white/70 text-sm">{t.desc}</p>
-                                    </div>
-                                </div>
+                                    <i data-lucide="plus-circle" className="w-5 h-5 text-gray-300 group-hover:text-gold opacity-0 group-hover:opacity-100 transition-all"></i>
+                                </button>
                             ))}
-                            <div className="rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center p-6 text-center hover:border-gold/40 transition-all group cursor-pointer">
-                                <i data-lucide="plus" className="w-8 h-8 text-gray-300 group-hover:text-gold mb-2"></i>
-                                <span className="text-sm font-medium text-gray-400 group-hover:text-gold">Adicionar Revestimento</span>
-                            </div>
                         </div>
                     </div>
 
-                    <div className="bg-graphite text-white p-8 rounded-[40px] premium-shadow border border-white/10 relative overflow-hidden">
-                        <div className="absolute -top-12 -right-12 w-40 h-40 bg-gold/10 rounded-full blur-3xl"></div>
-                        <h4 className="text-gold font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-xs">
-                            <i data-lucide="shopping-bag" className="w-4 h-4"></i>
-                            Recomendação Premium
-                        </h4>
-                        <p className="text-lg leading-relaxed mb-6">
-                            Para este estilo, recomendamos o uso de <strong>Madeira de Reflorestamento</strong> combinada com <strong>Verde Oliva Suave</strong>.
-                        </p>
-                        <button className="bg-gold text-white font-bold px-8 py-3 rounded-xl hover:bg-gold-dark transition-all flex items-center gap-2">
-                            Ver Lista de Materiais
-                            <i data-lucide="arrow-right" className="w-5 h-5"></i>
-                        </button>
+                    <div className="bg-white p-8 rounded-[40px] border border-gray-100 premium-shadow">
+                        <h3 className="font-display font-bold text-xl mb-6 flex items-center gap-2">
+                             <i data-lucide="layers" className="w-5 h-5 text-gold"></i>
+                             Revestimentos
+                        </h3>
+                        <div className="grid grid-cols-1 gap-4">
+                            {textures.map((t) => (
+                                <button 
+                                    key={t.name}
+                                    onClick={() => addToComposer(t, 'texture')}
+                                    className="flex items-center gap-4 group p-2 rounded-2xl hover:bg-gray-50 transition-all text-left"
+                                >
+                                    <img src={t.img} className="w-12 h-12 rounded-xl object-cover shrink-0" alt={t.name} />
+                                    <div className="flex-grow">
+                                        <h4 className="font-bold text-sm text-graphite">{t.name}</h4>
+                                        <span className="text-[10px] uppercase tracking-wider text-gray-400">Padrão</span>
+                                    </div>
+                                    <i data-lucide="plus-circle" className="w-5 h-5 text-gray-300 group-hover:text-gold opacity-0 group-hover:opacity-100 transition-all"></i>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right: The Canvas */}
+                <div className="lg:col-span-8 flex flex-col gap-8">
+                    <div className="bg-white p-10 rounded-[50px] border border-gray-100 premium-shadow min-h-[500px] flex flex-col relative overflow-hidden bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px]">
+                        <div className="flex items-center justify-between mb-10">
+                            <div>
+                                <h3 className="font-display font-bold text-3xl tracking-tight">Seu Composer</h3>
+                                <p className="text-gray-400 text-sm mt-1">Clique nos itens à esquerda para adicionar à tela</p>
+                            </div>
+                            <button 
+                                onClick={() => setComposerItems([])}
+                                className="text-gray-400 hover:text-terracotta transition-colors flex items-center gap-2 text-sm font-medium"
+                            >
+                                <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                Limpar
+                            </button>
+                        </div>
+
+                        {composerItems.length === 0 ? (
+                            <div className="flex-grow flex flex-col items-center justify-center text-center opacity-40">
+                                <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center mb-6">
+                                    <i data-lucide="layout" className="w-10 h-10 text-gray-300"></i>
+                                </div>
+                                <p className="text-xl font-display font-medium">Sua composição está vazia</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 animate-fade-in relative z-10">
+                                {composerItems.map((item) => (
+                                    <div key={item.id} className="group relative bg-white p-4 rounded-3xl premium-shadow hover:scale-105 transition-all animate-slide-up border border-gray-50">
+                                        <button 
+                                            onClick={() => removeFromComposer(item.id)}
+                                            className="absolute -top-2 -right-2 w-8 h-8 bg-terracotta text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20 shadow-lg"
+                                        >
+                                            <i data-lucide="x" className="w-4 h-4"></i>
+                                        </button>
+                                        <div className="aspect-square rounded-2xl overflow-hidden mb-4 shadow-inner">
+                                            {item.type === 'color' ? (
+                                                <div className="w-full h-full" style={{ backgroundColor: item.color }}></div>
+                                            ) : (
+                                                <img src={item.img} className="w-full h-full object-cover" alt={item.name} />
+                                            )}
+                                        </div>
+                                        <h4 className="font-bold text-sm text-graphite truncate">{item.name}</h4>
+                                        <p className="text-[10px] text-gray-400 uppercase tracking-widest">{item.type === 'color' ? 'Tinta' : 'Textura'}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        
+                        {/* Interactive UI elements only visible when items exist */}
+                        {composerItems.length > 0 && (
+                            <div className="absolute bottom-8 right-8 flex gap-4">
+                                <button className="bg-graphite text-white px-8 py-3 rounded-2xl font-bold hover:bg-olive-soft transition-all shadow-xl flex items-center gap-2">
+                                    <i data-lucide="download" className="w-5 h-5"></i>
+                                    Salvar Projeto
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-olive-soft/5 p-8 rounded-[40px] border border-olive-soft/10 flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm text-olive-soft">
+                                <i data-lucide="check-circle-2" className="w-8 h-8"></i>
+                            </div>
+                            <div>
+                                <h4 className="font-display font-bold text-lg">Harmonia Garantida</h4>
+                                <p className="text-gray-500 text-sm max-w-sm leading-relaxed">Nossa IA validou os elementos acima. Eles pertencem à paleta <strong>Biofílica e Moderna</strong>.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     );
 };
+
+window.MoodboardModule = MoodboardModule;
 
 window.MoodboardModule = MoodboardModule;
