@@ -1,6 +1,8 @@
 const VisionModule = ({ image, setImage, setExtractedColors }) => {
     const [selectedStyle, setSelectedStyle] = React.useState('Moderno');
     const [isProcessing, setIsProcessing] = React.useState(false);
+    const [sliderPos, setSliderPos] = React.useState(50);
+    const [showComparison, setShowComparison] = React.useState(false);
 
     const styles = [
         { name: 'Industrial', icon: 'wrench', desc: 'Metais, tijolos e tons escuros.' },
@@ -49,6 +51,7 @@ const VisionModule = ({ image, setImage, setExtractedColors }) => {
             reader.onload = (f) => {
                 setImage(f.target.result);
                 extractColors(f.target.result);
+                setShowComparison(false);
             };
             reader.readAsDataURL(file);
         }
@@ -67,7 +70,10 @@ const VisionModule = ({ image, setImage, setExtractedColors }) => {
 
     const handleTransform = () => {
         setIsProcessing(true);
-        setTimeout(() => setIsProcessing(false), 1500); 
+        setTimeout(() => {
+            setIsProcessing(false);
+            setShowComparison(true);
+        }, 1500); 
     };
 
     return (
@@ -85,42 +91,84 @@ const VisionModule = ({ image, setImage, setExtractedColors }) => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Upload & Preview Side */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="relative group overflow-hidden rounded-3xl premium-shadow border-2 border-dashed border-gray-200 bg-white aspect-video flex flex-col items-center justify-center transition-all hover:border-olive-soft">
+                    <div className="relative group overflow-hidden rounded-[40px] premium-shadow border border-gray-100 bg-white aspect-video flex flex-col items-center justify-center transition-all bg-gray-50">
                         {image ? (
-                            <>
+                            <div className="relative w-full h-full cursor-col-resize select-none overflow-hidden" 
+                                 onMouseMove={(e) => {
+                                     if (showComparison) {
+                                         const rect = e.currentTarget.getBoundingClientRect();
+                                         const x = ((e.clientX - rect.left) / rect.width) * 100;
+                                         setSliderPos(Math.max(0, Math.min(100, x)));
+                                     }
+                                 }}
+                                 onTouchMove={(e) => {
+                                     if (showComparison) {
+                                         const rect = e.currentTarget.getBoundingClientRect();
+                                         const x = ((e.touches[0].clientX - rect.left) / rect.width) * 100;
+                                         setSliderPos(Math.max(0, Math.min(100, x)));
+                                     }
+                                 }}
+                            >
+                                {/* Filtered Image (Result) */}
                                 <img 
                                     src={image} 
-                                    className="absolute inset-0 w-full h-full object-cover transition-all duration-1000" 
+                                    className="absolute inset-0 w-full h-full object-cover" 
                                     style={{ filter: getStyleFilter() }}
-                                    alt="Ambiente" 
+                                    alt="Result" 
                                 />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                    <label className="bg-white/90 p-3 rounded-full cursor-pointer hover:bg-white transition-all">
-                                        <i data-lucide="refresh-cw" className="w-6 h-6 text-graphite"></i>
-                                        <input type="file" className="hidden" onChange={handleUpload} accept="image/*" />
-                                    </label>
-                                </div>
-                                {!isProcessing && (
-                                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold shadow-sm">
-                                        Renderizado: {selectedStyle}
+                                
+                                {/* Original Image (Overlayed with clip-path) */}
+                                {showComparison && (
+                                    <div 
+                                        className="absolute inset-0 w-full h-full z-10 pointer-events-none"
+                                        style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
+                                    >
+                                        <img src={image} className="w-full h-full object-cover" alt="Original" />
                                     </div>
                                 )}
-                            </>
+
+                                {/* Slider Handle */}
+                                {showComparison && (
+                                    <div 
+                                        className="absolute top-0 bottom-0 z-20 w-1 bg-white shadow-xl flex items-center justify-center pointer-events-none"
+                                        style={{ left: `${sliderPos}%` }}
+                                    >
+                                        <div className="w-10 h-10 bg-white rounded-full shadow-2xl flex items-center justify-center -ml-0">
+                                            <i data-lucide="chevrons-left-right" className="w-5 h-5 text-olive-soft"></i>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {!isProcessing && !showComparison && (
+                                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-all flex items-center justify-center transition-opacity opacity-0 group-hover:opacity-100">
+                                        <label className="bg-white/90 p-3 rounded-full cursor-pointer hover:bg-white transition-all scale-125">
+                                            <i data-lucide="refresh-cw" className="w-6 h-6 text-graphite"></i>
+                                            <input type="file" className="hidden" onChange={handleUpload} accept="image/*" />
+                                        </label>
+                                    </div>
+                                )}
+                                
+                                <div className="absolute bottom-4 right-4 flex gap-2 z-30">
+                                    <div className="bg-white/80 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold shadow-sm uppercase tracking-widest text-olive-dark">
+                                        {showComparison ? 'Comparação Ativa' : (isProcessing ? 'Aguarde...' : selectedStyle)}
+                                    </div>
+                                </div>
+                            </div>
                         ) : (
                             <div className="text-center p-8">
-                                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-100 group-hover:scale-110 group-hover:bg-olive-light/10 transition-all">
-                                    <i data-lucide="upload-cloud" className="w-8 h-8 text-gray-400 group-hover:text-olive-soft"></i>
+                                <div className="w-20 h-20 bg-white rounded-[30px] flex items-center justify-center mx-auto mb-6 border border-gray-100 group-hover:scale-110 group-hover:bg-olive-light/10 transition-all shadow-sm">
+                                    <i data-lucide="camera" className="w-10 h-10 text-olive-soft"></i>
                                 </div>
-                                <p className="text-gray-900 font-semibold text-lg">Clique para upload</p>
-                                <p className="text-gray-400 text-sm mt-1">PNG, JPG até 10MB</p>
+                                <p className="text-graphite font-display font-bold text-xl">Upload do Ambiente</p>
+                                <p className="text-gray-400 text-sm mt-2">Arraste uma foto ou clique aqui</p>
                                 <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleUpload} accept="image/*" />
                             </div>
                         )}
                         
                         {isProcessing && (
-                            <div className="absolute inset-0 bg-olive-soft/80 backdrop-blur-sm flex flex-col items-center justify-center text-white z-10 animate-fade-in">
+                            <div className="absolute inset-0 bg-olive-soft/90 backdrop-blur-md flex flex-col items-center justify-center text-white z-40 animate-fade-in rounded-[40px]">
                                 <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
-                                <p className="font-display text-xl font-medium">Renderizando em {selectedStyle}...</p>
+                                <p className="font-display text-2xl font-medium tracking-tight">Aplicando Estilo {selectedStyle}...</p>
                             </div>
                         )}
                     </div>
