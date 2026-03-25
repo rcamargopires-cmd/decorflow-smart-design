@@ -1,39 +1,48 @@
-const DesignInsights = {
-    'Industrial': {
-        reason: 'Otimização de Espaço e Caráter',
-        insight: 'Sugerimos este estilo pois seu ambiente possui elementos estruturais que podem ser expostos. A "limpeza" removeu obstruções visuais, permitindo que o pé-direito pareça mais alto com trilhos pretos e texturas de cimento.'
-    },
+const STYLE_CONFIG = {
     'Biofílico': {
-        reason: 'Conexão com Bem-Estar',
-        insight: 'Com base na luz natural detectada, a IA removeu o "caos" visual e substituiu por verde estratégico. Ideal para reduzir o estresse urbano e melhorar a qualidade do ar no seu cotidiano.'
+        icon: 'leaf',
+        desc: 'Natureza e bem-estar.',
+        prompt: 'Mantenha a estrutura da sala, mas remova móveis antigos e adicione plantas, texturas de madeira e tons de verde.',
+        reason: 'Biofilia aumenta a produtividade em 15%.'
+    },
+    'Industrial': {
+        icon: 'wrench',
+        desc: 'Estrutura e modernidade.',
+        prompt: 'Remova os objetos atuais e adicione acabamento de cimento queimado, trilhos pretos e móveis de couro.',
+        reason: 'Estilo atemporal que valoriza a estrutura.'
     },
     'Escandinavo': {
-        reason: 'Amplitude e Luminosidade',
-        insight: 'Sua sala pareceu pequena devido à bagunça. Após a limpeza IA, aplicamos madeira clara e tons pastéis para maximizar o reflexo da luz e criar uma sensação de paz técnica.'
+        icon: 'snowflake',
+        desc: 'Luz e minimalismo.',
+        prompt: 'Limpe o ambiente e aplique tons claros, madeira de pinus e iluminação minimalista funcional.',
+        reason: 'Maximiza a percepção de espaço e luz.'
     },
     'Moderno': {
-        reason: 'Funcionalidade Total',
-        insight: 'Eliminamos objetos sem propósito. O design moderno organiza seu fluxo de passagem e foca no que realmente importa: uma estética limpa, digital e atemporal.'
+        icon: 'monitor',
+        desc: 'Linhas retas e elegância.',
+        prompt: 'Remova excessos e aplique linhas retas, vidro, metal e uma paleta monocromática elegante.',
+        reason: 'Foco na funcionalidade e sofisticação.'
     }
 };
 
 const VisionModule = ({ image, setImage, setExtractedColors }) => {
     const [selectedStyle, setSelectedStyle] = React.useState('Moderno');
     const [status, setStatus] = React.useState('');
+    const [currentPrompt, setCurrentPrompt] = React.useState('');
     const [isProcessing, setIsProcessing] = React.useState(false);
     const [sliderPos, setSliderPos] = React.useState(50);
     const [showComparison, setShowComparison] = React.useState(false);
 
-    const styles = [
-        { name: 'Industrial', icon: 'wrench', desc: 'Metais, tijolos e tons escuros.' },
-        { name: 'Biofílico', icon: 'leaf', desc: 'Muita vegetação e luz natural.' },
-        { name: 'Escandinavo', icon: 'snowflake', desc: 'Minimalismo, madeira e tons claros.' },
-        { name: 'Moderno', icon: 'monitor', desc: 'Linhas retas e design funcional.' }
-    ];
+    const callVisionAPI = async (img, prompt) => {
+        // Simulação de chamada de API (DALL-E 3 / Stable Diffusion)
+        return new Promise((resolve) => {
+            setTimeout(() => resolve(true), 3000);
+        });
+    };
 
     const getStyleFilter = () => {
         if (isProcessing) {
-            if (status.includes('Limpeza')) return 'blur(20px) brightness(1.5) contrast(0.5)';
+            if (status.includes('Limpeza')) return 'blur(20px) contrast(0.5)';
             return 'blur(5px) brightness(0.8)';
         }
         switch (selectedStyle) {
@@ -85,38 +94,40 @@ const VisionModule = ({ image, setImage, setExtractedColors }) => {
         }
     };
 
-    const handleTransform = (styleName) => {
-        if (styleName) setSelectedStyle(styleName);
+    const handleTransform = async (styleName) => {
+        const style = styleName || selectedStyle;
+        setSelectedStyle(style);
+        const prompt = STYLE_CONFIG[style].prompt;
+        setCurrentPrompt(prompt);
         setIsProcessing(true);
-        setStatus('ANALISANDO ESTRUTURA...');
         
-        setTimeout(() => {
-            setStatus('LIMPANDO AMBIENTE (Inpainting)...');
-            setTimeout(() => {
-                setStatus(`APLICANDO ESTILO ${styleName || selectedStyle}...`);
-                setTimeout(() => {
-                    setIsProcessing(false);
-                    setShowComparison(true);
-                    setStatus('');
-                }, 1000);
-            }, 1200);
-        }, 800);
+        setStatus('CONECTANDO À API DE VISION...');
+        await new Promise(r => setTimeout(r, 800));
+        
+        setStatus('LIMPANDO AMBIENTE (Inpainting)...');
+        await new Promise(r => setTimeout(r, 1200));
+        
+        setStatus(`RENDERIZANDO COM IA...`);
+        await callVisionAPI(image, prompt);
+        
+        setIsProcessing(false);
+        setShowComparison(true);
+        setStatus('');
     };
 
     return (
         <div className="max-w-6xl mx-auto animate-slide-up">
             <div className="text-center mb-12">
                 <span className="inline-block px-4 py-1.5 bg-gold/10 text-gold-dark rounded-full text-[10px] font-black mb-4 border border-gold/20 uppercase tracking-[0.2em]">
-                    Inspiração Real IA
+                    Ativação Vision API
                 </span>
-                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">Evolução de <span className="text-olive-soft italic font-light">Ambiente</span></h2>
+                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">Transformação <span className="text-olive-soft italic font-light">Rede IA</span></h2>
                 <p className="text-gray-500 text-lg max-w-2xl mx-auto italic">
-                    Nossa IA detecta o potencial do seu espaço, limpa a bagunça e sugere o melhor design técnico.
+                    Utilizamos prompts estruturados para reconstruir seu ambiente em tempo real.
                 </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-                {/* Main Viewport */}
                 <div className="lg:col-span-8 space-y-6">
                     <div className="relative group overflow-hidden rounded-[50px] premium-shadow border border-gray-100 bg-white aspect-[16/10] flex flex-col items-center justify-center transition-all bg-gray-50 shadow-inner">
                         {image ? (
@@ -129,63 +140,46 @@ const VisionModule = ({ image, setImage, setExtractedColors }) => {
                                      }
                                  }}
                             >
-                                {/* Filtered Image (Result) */}
-                                <img 
-                                    src={image} 
-                                    className="absolute inset-0 w-full h-full object-cover" 
-                                    style={{ filter: getStyleFilter() }}
-                                    alt="Result" 
-                                />
-                                
-                                {/* Original Image (Overlayed with clip-path) */}
-                                <div 
-                                    className="absolute inset-0 w-full h-full z-10 pointer-events-none"
-                                    style={{ clipPath: showComparison ? `inset(0 ${100 - sliderPos}% 0 0)` : 'inset(0 0% 0 0)' }}
-                                >
+                                <img src={image} className="absolute inset-0 w-full h-full object-cover" style={{ filter: getStyleFilter() }} alt="Result" />
+                                <div className="absolute inset-0 w-full h-full z-10 pointer-events-none" style={{ clipPath: showComparison ? `inset(0 ${100 - sliderPos}% 0 0)` : 'inset(0 0% 0 0)' }}>
                                     <img src={image} className="w-full h-full object-cover" alt="Original" />
                                 </div>
 
-                                {/* Slider Handle */}
                                 {showComparison && (
-                                    <div 
-                                        className="absolute top-0 bottom-0 z-20 w-1 bg-white shadow-xl flex items-center justify-center pointer-events-none"
-                                        style={{ left: `${sliderPos}%` }}
-                                    >
+                                    <div className="absolute top-0 bottom-0 z-20 w-1 bg-white shadow-xl flex items-center justify-center pointer-events-none" style={{ left: `${sliderPos}%` }}>
                                         <div className="w-12 h-12 bg-white rounded-full shadow-2xl flex items-center justify-center -ml-0 border-4 border-gray-50">
-                                            <i data-lucide="split" className="w-6 h-6 text-gold"></i>
+                                            <i data-lucide="zap" className="w-6 h-6 text-gold"></i>
                                         </div>
                                     </div>
                                 )}
                                 
-                                <div className="absolute top-6 left-6 z-30 flex gap-2">
-                                    <div className="bg-graphite/40 backdrop-blur-md px-4 py-2 rounded-2xl text-[10px] font-bold text-white uppercase tracking-widest border border-white/10">
-                                        {showComparison ? 'Visão Transformada' : 'Captura Original'}
+                                <div className="absolute bottom-6 left-6 z-30 flex gap-2">
+                                    <div className="bg-graphite/60 backdrop-blur-md px-4 py-2 rounded-2xl text-[10px] font-bold text-white uppercase tracking-widest border border-white/10">
+                                        {showComparison ? (sliderPos > 50 ? 'IA Render' : 'Original') : 'Original'}
                                     </div>
                                 </div>
                             </div>
                         ) : (
                             <div className="text-center p-12">
-                                <div className="w-24 h-24 bg-white rounded-[40px] flex items-center justify-center mx-auto mb-8 border border-gray-100 group-hover:scale-110 group-hover:rotate-3 transition-all shadow-sm">
-                                    <i data-lucide="camera" className="w-12 h-12 text-olive-soft"></i>
+                                <div className="w-24 h-24 bg-white rounded-[40px] flex items-center justify-center mx-auto mb-8 border border-gray-100 transition-all shadow-sm">
+                                    <i data-lucide="image-plus" className="w-12 h-12 text-olive-soft"></i>
                                 </div>
-                                <h3 className="text-graphite font-display font-bold text-2xl mb-2">Seu Espaço Vazio ou Bagunçado</h3>
-                                <p className="text-gray-400">Arraste uma foto e deixe a IA Designer cuidar do resto.</p>
+                                <h3 className="text-graphite font-display font-bold text-2xl mb-2">Upload da Foto</h3>
+                                <p className="text-gray-400">Arraste ou clique para enviar a imagem do seu ambiente.</p>
                                 <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleUpload} accept="image/*" />
                             </div>
                         )}
                         
                         {isProcessing && (
-                            <div className="absolute inset-0 bg-graphite/90 backdrop-blur-2xl flex flex-col items-center justify-center text-white z-40 animate-fade-in">
-                                <div className="relative w-24 h-24 mb-10">
-                                    <div className="absolute inset-0 border-4 border-white/10 rounded-full"></div>
-                                    <div className="absolute inset-0 border-4 border-t-gold rounded-full animate-spin"></div>
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <i data-lucide="wand-2" className="w-8 h-8 text-gold animate-pulse"></i>
+                            <div className="absolute inset-0 bg-graphite/95 backdrop-blur-3xl flex flex-col items-center justify-center text-white z-40 animate-fade-in px-12 text-center">
+                                <div className="w-16 h-16 border-4 border-gold border-t-transparent rounded-full animate-spin mb-10"></div>
+                                <p className="font-display text-4xl font-bold tracking-tight mb-4 text-gold">{status}</p>
+                                <div className="bg-white/5 p-8 rounded-3xl border border-white/10 max-w-lg">
+                                    <div className="flex items-center gap-3 mb-4 justify-center">
+                                        <div className="w-2 h-2 bg-gold rounded-full animate-pulse"></div>
+                                        <p className="text-[10px] uppercase tracking-widest text-white/40 font-black">Prompt de Engenharia Enviado</p>
                                     </div>
-                                </div>
-                                <p className="font-display text-4xl font-bold tracking-tight mb-4">{status}</p>
-                                <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
-                                    <div className="h-full bg-gold animate-[progress_3s_ease-in-out_infinite]"></div>
+                                    <p className="text-md italic text-white/80 leading-relaxed font-light">"{currentPrompt}"</p>
                                 </div>
                             </div>
                         )}
@@ -197,65 +191,63 @@ const VisionModule = ({ image, setImage, setExtractedColors }) => {
                                 <i data-lucide="lightbulb" className="w-10 h-10 text-gold"></i>
                             </div>
                             <div>
-                                <h4 className="font-display font-bold text-2xl mb-2 flex items-center gap-3">
-                                    Recomendação do Designer IA
-                                    <span className="text-[10px] px-2 py-1 bg-green-50 text-green-600 rounded-lg uppercase">Expertize Nível 5</span>
-                                </h4>
-                                <p className="text-gray-400 font-bold mb-3 uppercase tracking-widest text-[11px] text-olive-dark">Foco: {DesignInsights[selectedStyle].reason}</p>
+                                <h4 className="font-display font-bold text-2xl mb-2">Expertise Técnica Aplicada</h4>
                                 <p className="text-gray-500 leading-relaxed text-lg">
-                                    "{DesignInsights[selectedStyle].insight}"
+                                    {STYLE_CONFIG[selectedStyle].reason}
                                 </p>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* Sidebar Controls */}
                 <div className="lg:col-span-4 space-y-6">
                     <div className="bg-graphite p-8 rounded-[40px] text-white overflow-hidden relative">
                         <div className="absolute top-0 right-0 p-6 opacity-5 rotate-12">
-                            <i data-lucide="zap" className="w-32 h-32"></i>
+                            <i data-lucide="cpu" className="w-32 h-32"></i>
                         </div>
-                        <h3 className="font-display font-bold text-xl mb-8 flex items-center gap-3">
-                            <i data-lucide="layers" className="w-5 h-5 text-gold"></i>
-                            Algoritmo de Estilo
+                        <h3 className="font-display font-bold text-xl mb-10 flex items-center gap-3 relative z-10">
+                            <i data-lucide="sliders" className="w-5 h-5 text-gold"></i>
+                            Configuração IA
                         </h3>
                         
-                        <div className="space-y-4">
-                            {styles.map((style) => (
+                        <div className="space-y-4 relative z-10">
+                            {Object.entries(STYLE_CONFIG).map(([name, config]) => (
                                 <button
-                                    key={style.name}
+                                    key={name}
                                     disabled={!image || isProcessing}
-                                    onClick={() => handleTransform(style.name)}
-                                    className={`w-full p-5 rounded-3xl border text-left transition-all flex items-center justify-between group ${selectedStyle === style.name ? 'border-gold bg-gold/10' : 'border-white/5 bg-white/5 hover:bg-white/10'} ${(!image || isProcessing) ? 'opacity-30' : ''}`}
+                                    onClick={() => handleTransform(name)}
+                                    className={`w-full p-6 rounded-3xl border text-left transition-all flex items-center justify-between group ${selectedStyle === name ? 'border-gold bg-gold/10' : 'border-white/5 bg-white/5 hover:bg-white/10'} ${(!image || isProcessing) ? 'opacity-30' : ''}`}
                                 >
-                                    <div className="flex items-center gap-4">
-                                        <div className={`p-3 rounded-2xl ${selectedStyle === style.name ? 'bg-gold text-graphite' : 'bg-white/10 text-white/40 group-hover:bg-white/20 transition-all'}`}>
-                                            <i data-lucide={style.icon} className="w-5 h-5"></i>
+                                    <div className="flex items-center gap-5">
+                                        <div className={`p-4 rounded-2xl ${selectedStyle === name ? 'bg-gold text-graphite shadow-lg shadow-gold/20' : 'bg-white/10 text-white/40'}`}>
+                                            <i data-lucide={config.icon} className="w-6 h-6"></i>
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-sm tracking-wide">{style.name}</h4>
-                                            <p className="text-[10px] text-white/40 mt-1 uppercase tracking-widest font-bold">Designer Sugere</p>
+                                            <h4 className="font-bold text-md tracking-wide">{name}</h4>
+                                            <p className="text-[10px] text-white/30 uppercase mt-1 tracking-widest font-bold">{config.desc}</p>
                                         </div>
                                     </div>
-                                    <i data-lucide="chevron-right" className={`w-4 h-4 transition-transform ${selectedStyle === style.name ? 'translate-x-1 text-gold' : 'text-white/20 group-hover:translate-x-1 group-hover:text-white/40'}`}></i>
+                                    {selectedStyle === name && <div className="w-2 h-2 bg-gold rounded-full animate-ping"></div>}
                                 </button>
                             ))}
-                        </div>
-
-                        <div className="mt-10 pt-10 border-t border-white/5 italic text-sm text-white/30 leading-relaxed">
-                            "O motor IA reconstrói volumetria e materiais em tempo real."
                         </div>
                     </div>
                     
                     <button 
                         disabled={!image || isProcessing}
                         onClick={() => handleTransform()}
-                        className={`w-full py-6 rounded-3xl font-display font-bold text-xl shadow-2xl transition-all flex items-center justify-center gap-4 active:scale-95 ${image && !isProcessing ? 'bg-olive-soft text-white hover:bg-olive-dark shadow-olive-soft/20' : 'bg-white/5 text-gray-500 border border-white/5'}`}
+                        className={`w-full py-6 rounded-[30px] font-display font-bold text-xl shadow-2xl transition-all flex items-center justify-center gap-4 active:scale-95 ${image && !isProcessing ? 'bg-olive-soft text-white hover:bg-olive-dark shadow-olive-soft/20' : 'bg-white/5 text-gray-500 border border-white/5 cursor-not-allowed'}`}
                     >
-                        <i data-lucide="refresh-cw" className={`w-6 h-6 ${isProcessing ? 'animate-spin' : ''}`}></i>
-                        Refazer Análise
+                        <i data-lucide="zap" className={`w-6 h-6 ${isProcessing ? 'animate-bounce' : ''}`}></i>
+                        {isProcessing ? 'Processando...' : 'Regerar com IA'}
                     </button>
+                    
+                    <div className="p-6 bg-terracotta/5 rounded-3xl border border-terracotta/10">
+                        <p className="text-[10px] font-black text-terracotta uppercase tracking-widest mb-2">Nota de Segurança</p>
+                        <p className="text-[11px] text-terracotta/70 font-medium leading-relaxed">
+                            Esta interface simula a conexão com APIs de alta latência como DALL-E e Stable Diffusion para demonstração técnica.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
