@@ -1,128 +1,145 @@
 const CalculatorModule = () => {
     const [area, setArea] = React.useState(20);
-    const [wallHeight, setWallHeight] = React.useState(2.7);
+    const [height, setHeight] = React.useState(2.7);
     
-    // Simple logic
-    const paintLiters = (area / 10).toFixed(1);
-    const flooringM2 = (area * 1.1).toFixed(1); // 10% waste
-    const wallpaperRolls = Math.ceil((area * wallHeight) / 5);
+    // Calculation logic
+    const wallArea = Math.sqrt(area) * 4 * height;
+    const flooring = Math.ceil(area * 1.1); // +10% waste
+    const paint = Math.ceil(wallArea / 10); // 10m²/L
+    const wallpaper = Math.ceil(wallArea / 5); // 5m²/roll
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const budgetItems = [
+        { name: 'Tinta Premium (Latas)', qty: paint, price: 180, icon: 'droplet', color: 'text-blue-500' },
+        { name: 'Piso Vinílico (m²)', qty: flooring, price: 95, icon: 'box', color: 'text-amber-600' },
+        { name: 'Papel de Parede (Rolos)', qty: wallpaper, price: 220, icon: 'scroll', color: 'text-terracotta' }
+    ];
+
+    const total = budgetItems.reduce((acc, item) => acc + (item.qty * item.price), 0);
 
     return (
-        <div className="max-w-4xl mx-auto animate-slide-up">
-            <div className="text-center mb-12">
-                <span className="inline-block px-4 py-1.5 bg-terracotta/10 text-terracotta-dark rounded-full text-sm font-semibold mb-4 border border-terracotta/20">
-                    Cálculo & Orçamento
+        <div className="max-w-6xl mx-auto animate-slide-up pb-20">
+            {/* Header section hidden on print */}
+            <div className="text-center mb-12 print:hidden">
+                <span className="inline-block px-4 py-1.5 bg-terracotta/10 text-terracotta rounded-full text-sm font-semibold mb-4 border border-terracotta/20">
+                    Módulo de Cálculo
                 </span>
-                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">Lista de <span className="text-terracotta italic font-light">Compras</span></h2>
-                <p className="text-gray-500 text-lg max-w-xl mx-auto">
-                    Converta seu design em medidas reais e saiba exatamente o que comprar.
+                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">Orçamento <span className="text-terracotta italic font-light">Inteligente</span></h2>
+                <p className="text-gray-500 text-lg max-w-2xl mx-auto">
+                    Converta suas medidas em uma lista de compras técnica e profissional.
                 </p>
             </div>
 
-            <div className="bg-white p-8 md:p-12 rounded-[50px] premium-shadow border border-gray-100 flex flex-col md:flex-row gap-12">
-                {/* Inputs */}
-                <div className="md:w-1/3 space-y-8 border-b md:border-b-0 md:border-r border-gray-100 pb-8 md:pb-0 md:pr-12">
-                    <h3 className="font-display font-bold text-xl mb-6">Dimensões</h3>
-                    
-                    <div className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-500 mb-2">Área do Piso (m²)</label>
-                            <div className="relative">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                {/* Inputs area - hidden on print */}
+                <div className="lg:col-span-4 space-y-6 print:hidden">
+                    <div className="bg-white p-8 rounded-[40px] border border-gray-100 premium-shadow">
+                        <h3 className="font-display font-bold text-xl mb-8">Medidas do Ambiente</h3>
+                        
+                        <div className="space-y-8">
+                            <div>
+                                <div className="flex justify-between mb-4">
+                                    <label className="text-sm font-bold text-graphite uppercase tracking-wider">Área do Piso (m²)</label>
+                                    <span className="text-olive-soft font-bold text-lg">{area} m²</span>
+                                </div>
                                 <input 
-                                    type="number" 
-                                    value={area}
+                                    type="range" min="5" max="100" value={area} 
                                     onChange={(e) => setArea(e.target.value)}
-                                    className="w-full bg-gray-50 border-2 border-gray-50 focus:border-terracotta/20 focus:bg-white p-4 rounded-2xl transition-all outline-none font-bold text-lg"
+                                    className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-olive-soft"
                                 />
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">m²</span>
                             </div>
-                        </div>
 
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-500 mb-2">Altura das Paredes (m)</label>
-                            <div className="relative">
+                            <div>
+                                <div className="flex justify-between mb-4">
+                                    <label className="text-sm font-bold text-graphite uppercase tracking-wider">Pé Direito (m)</label>
+                                    <span className="text-olive-soft font-bold text-lg">{height} m</span>
+                                </div>
                                 <input 
-                                    type="number" 
-                                    value={wallHeight}
-                                    onChange={(e) => setWallHeight(e.target.value)}
-                                    className="w-full bg-gray-50 border-2 border-gray-50 focus:border-terracotta/20 focus:bg-white p-4 rounded-2xl transition-all outline-none font-bold text-lg"
+                                    type="range" min="2" max="4" step="0.1" value={height} 
+                                    onChange={(e) => setHeight(e.target.value)}
+                                    className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-olive-soft"
                                 />
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">m</span>
                             </div>
                         </div>
-
-                        <div className="p-6 bg-olive-soft/10 rounded-2xl border border-olive-soft/10 text-olive-dark text-sm flex items-start gap-3">
-                            <i data-lucide="info" className="w-5 h-5 shrink-0"></i>
-                            <p>Baseamos o rendimento em produtos premium com alta cobertura.</p>
+                    </div>
+                    
+                    <div className="bg-graphite p-8 rounded-[40px] text-white overflow-hidden relative">
+                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                            <i data-lucide="info" className="w-20 h-20"></i>
                         </div>
+                        <h4 className="text-gold font-bold mb-2">Nota Técnica</h4>
+                        <p className="text-sm text-gray-400 leading-relaxed">
+                            Cálculos incluem margem de segurança de 10% para recortes e desperdício padrão de obra.
+                        </p>
                     </div>
                 </div>
 
-                {/* Results List */}
-                <div className="flex-grow">
-                    <h3 className="font-display font-bold text-xl mb-8">Quantidades Necessárias</h3>
-                    <div className="space-y-4">
-                        {/* Paint */}
-                        <div className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100 group">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-white rounded-xl shadow-sm group-hover:text-terracotta transition-colors">
-                                    <i data-lucide="droplet"></i>
-                                </div>
-                                <div>
-                                    <h4 className="font-bold">Tinta (Acetinada)</h4>
-                                    <p className="text-sm text-gray-400">Rendimento: 10m²/L</p>
-                                </div>
-                            </div>
-                            <div className="text-right flex items-center gap-6">
-                                <div className="text-xl font-bold font-display">{paintLiters} Litros</div>
-                                <button className="bg-terracotta text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-terracotta-dark transition-all premium-shadow">Comprar Agora</button>
-                            </div>
+                {/* Results area - optimized for print */}
+                <div className="lg:col-span-8 space-y-8">
+                    <div className="bg-white p-10 rounded-[50px] border border-gray-100 premium-shadow relative overflow-hidden">
+                        {/* Print Header (Only visible on print) */}
+                        <div className="hidden print:block mb-10 border-b pb-8">
+                            <h1 className="text-3xl font-display font-bold">DecorFlow - Orçamento Técnico</h1>
+                            <p className="text-gray-500">Documento gerado em {new Date().toLocaleDateString('pt-BR')}</p>
                         </div>
 
-                        {/* Flooring */}
-                        <div className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100 group">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-white rounded-xl shadow-sm group-hover:text-gold transition-colors">
-                                    <i data-lucide="grid-3x3"></i>
-                                </div>
-                                <div>
-                                    <h4 className="font-bold">Piso Laminado/Vinílico</h4>
-                                    <p className="text-sm text-gray-400">+10% margem de erro</p>
-                                </div>
-                            </div>
-                            <div className="text-right flex items-center gap-6">
-                                <div className="text-xl font-bold font-display">{flooringM2} m²</div>
-                                <button className="bg-gold text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-gold-dark transition-all premium-shadow">Comprar Agora</button>
-                            </div>
+                        <div className="flex items-center justify-between mb-10 print:mb-6">
+                            <h3 className="font-display font-bold text-2xl tracking-tight">Lista de Materiais</h3>
+                            <button 
+                                onClick={handlePrint}
+                                className="bg-white text-graphite border border-gray-200 px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition-all print:hidden"
+                            >
+                                <i data-lucide="file-text" className="w-4 h-4"></i>
+                                Exportar PDF
+                            </button>
                         </div>
 
-                        {/* Wallpaper */}
-                        <div className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100 group">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-white rounded-xl shadow-sm group-hover:text-olive-soft transition-colors">
-                                    <i data-lucide="scroll"></i>
-                                </div>
-                                <div>
-                                    <h4 className="font-bold">Papel de Parede</h4>
-                                    <p className="text-sm text-gray-400">Rolos de 5m²</p>
-                                </div>
-                            </div>
-                            <div className="text-right flex items-center gap-6">
-                                <div className="text-xl font-bold font-display">{wallpaperRolls} Rolos</div>
-                                <button className="bg-graphite text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-graphite-light transition-all premium-shadow">Comprar Agora</button>
-                            </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b border-gray-50">
+                                        <th className="py-4 font-bold text-xs uppercase tracking-widest text-gray-400">Item</th>
+                                        <th className="py-4 font-bold text-xs uppercase tracking-widest text-gray-400 text-center">Quant.</th>
+                                        <th className="py-4 font-bold text-xs uppercase tracking-widest text-gray-400 text-right">Estimativa</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {budgetItems.map((item) => (
+                                        <tr key={item.name} className="group hover:bg-gray-50/50 transition-colors">
+                                            <td className="py-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`p-3 rounded-xl bg-gray-50 ${item.color} print:text-black`}>
+                                                        <i data-lucide={item.icon} className="w-6 h-6"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-graphite">{item.name}</p>
+                                                        <p className="text-xs text-gray-400">Qualidade Premium</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-6 text-center font-bold text-lg">{item.qty}</td>
+                                            <td className="py-6 text-right font-display font-bold text-xl text-graphite">
+                                                R$ {(item.qty * item.price).toLocaleString('pt-BR')}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
-                    
-                    <div className="mt-12 p-8 bg-gray-900 rounded-[30px] text-white flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div>
-                            <p className="text-gray-400 text-sm mb-1 uppercase tracking-widest font-bold">Total Estimado</p>
-                            <h4 className="text-3xl font-display font-bold">R$ 2.450,00</h4>
+
+                        <div className="mt-10 pt-10 border-t flex items-center justify-between">
+                            <div className="print:block">
+                                <p className="text-sm text-gray-400 uppercase tracking-widest font-bold">Total Estimado</p>
+                                <h4 className="text-4xl font-display font-bold text-olive-dark">R$ {total.toLocaleString('pt-BR')}</h4>
+                            </div>
+                            <button className="bg-olive-soft text-white px-10 py-4 rounded-2xl font-bold hover:bg-olive-dark transition-all shadow-xl shadow-olive-soft/20 flex items-center gap-3 print:hidden">
+                                <i data-lucide="shopping-cart" className="w-6 h-6"></i>
+                                Comprar Tudo
+                            </button>
                         </div>
-                        <button className="w-full md:w-auto bg-white text-graphite px-10 py-4 rounded-2xl font-bold hover:bg-olive-soft hover:text-white transition-all flex items-center justify-center gap-2">
-                            <i data-lucide="file-text" className="w-5 h-5"></i>
-                            Exportar Orçamento Completo
-                        </button>
                     </div>
                 </div>
             </div>
