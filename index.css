@@ -1,0 +1,46 @@
+@layer base {
+    body {
+        @apply bg-[#FDFCFB] text-graphite antialiased;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    h1, h2, h3, h4, .font-display {
+        font-family: 'Outfit', sans-serif;
+    }
+}
+
+@layer components {
+    .premium-shadow {
+        box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.08);
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    @media print {
+        body { background: white !important; }
+        .print\:hidden { display: none !important; }
+        .premium-shadow { box-shadow: none !important; border: 1px solid #eee !important; }
+        .max-w-6xl, .max-w-5xl { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+        nav, footer, button:not(.print-only) { display: none !important; }
+        .bg-white { background: white !important; }
+        .shadow-inner { box-shadow: none !important; }
+    }
+
+    @keyframes slide-up {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .animate-slide-up { animation: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+}
