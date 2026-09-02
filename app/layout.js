@@ -1,4 +1,5 @@
 import "./globals.css";
+import StudioLauncher from "./StudioLauncher";
 
 export const metadata = {
   title: "PREVIEW",
@@ -8,7 +9,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>{children}<StudioLauncher /></body>
     </html>
   );
 }
