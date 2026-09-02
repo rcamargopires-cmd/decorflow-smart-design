@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 function loadImage(src){
@@ -19,6 +19,8 @@ function fitSize(w,h){
 
 export default function Studio(){
   const router=useRouter();
+  const searchParams=useSearchParams();
+  const simulationId=searchParams.get("id");
   const displayRef=useRef(null),sourceRef=useRef(null),maskRef=useRef(null),lastRef=useRef(null),drawingRef=useRef(false);
   const [sim,setSim]=useState(null),[recent,setRecent]=useState(null),[originalUrl,setOriginalUrl]=useState(""),[textureUrl,setTextureUrl]=useState(""),[resultUrl,setResultUrl]=useState("");
   const [msg,setMsg]=useState(""),[busy,setBusy]=useState(false),[brush,setBrush]=useState(42),[mode,setMode]=useState("paint"),[hasMask,setHasMask]=useState(false),[slider,setSlider]=useState(50);
@@ -40,18 +42,20 @@ export default function Studio(){
 
   useEffect(()=>{(async()=>{
     try{
+      setMsg("");
       const {data:{session}}=await supabase.auth.getSession();if(!session){router.replace("/");return;}
-      const id=new URLSearchParams(window.location.search).get("id");
-      if(!id){
+      if(!simulationId){
+        setSim(null);
         const {data,error}=await supabase.from("simulations").select("*,products(name,brand),projects(name)").order("created_at",{ascending:false}).limit(24);if(error)throw error;
         const list=await Promise.all((data||[]).map(async x=>({...x,thumb:await signed(x.result_image_path?"simulation-results":"environment-photos",x.result_image_path||x.original_image_path)})));
         setRecent(list);return;
       }
-      const {data,error}=await supabase.from("simulations").select("*,products(*),projects(*)").eq("id",id).single();if(error)throw error;setSim(data);
+      setRecent(null);
+      const {data,error}=await supabase.from("simulations").select("*,products(*),projects(*)").eq("id",simulationId).single();if(error)throw error;setSim(data);
       const [o,t,r]=await Promise.all([signed("environment-photos",data.original_image_path),signed("product-textures",data.products?.texture_path),data.result_image_path?signed("simulation-results",data.result_image_path):Promise.resolve("")]);
       setOriginalUrl(o);setTextureUrl(t);setResultUrl(r);await initialize(o);
     }catch(e){setMsg(e?.message||"Não foi possível abrir o estúdio.");}
-  })()},[router]);
+  })()},[router,simulationId]);
 
   function pointFromEvent(e){const c=displayRef.current,rect=c.getBoundingClientRect();return{x:(e.clientX-rect.left)*(c.width/rect.width),y:(e.clientY-rect.top)*(c.height/rect.height)};}
   function paintLine(a,b){
@@ -77,6 +81,7 @@ export default function Studio(){
       const [originalBlob,maskBlob,textureResponse]=await Promise.all([canvasBlob(sourceRef.current),canvasBlob(openMask),fetch(textureUrl)]);
       if(!textureResponse.ok)throw new Error("Não foi possível carregar a textura do produto.");const textureBlob=await textureResponse.blob();
       const form=new FormData();form.append("simulation_id",sim.id);form.append("original",originalBlob,"ambiente.png");form.append("mask",maskBlob,"mascara.png");form.append("texture",textureBlob,"produto."+(textureBlob.type.includes("png")?"png":"jpg"));
+      form.append("size",sourceRef.current.width>=sourceRef.current.height?"1536x1024":"1024x1536");
       setMsg("A IA está aplicando o material. A primeira geração pode levar até alguns minutos...");
       const response=await fetch("/api/simulate",{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`},body:form});const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.message||"Falha na geração.");
 
@@ -94,7 +99,7 @@ export default function Studio(){
   if(recent){
     return <main className="studioPage"><div className="studioTop"><div className="studioBrand"><div className="logo">P</div><div><b>PREVIEW Estúdio IA</b><div className="muted">Escolha uma simulação para trabalhar.</div></div></div><button className="secondary" onClick={()=>router.push("/dashboard")}>← Dashboard</button></div>
       {msg&&<div className="notice">{msg}</div>}
-      <div className="studioList">{recent.length?recent.map(x=><button className="studioListCard" key={x.id} onClick={()=>router.push(`/studio?id=${x.id}`)}><div className="studioListThumb">{x.thumb?<img src={x.thumb} alt="Ambiente"/>:"📷"}</div><div><b>{x.projects?.name||"Projeto"}</b><div className="muted">{x.products?.name||"Material"}</div><span className="badge">{x.status}</span></div></button>):<div className="panel empty">Você ainda não tem simulações. Crie uma no Dashboard e volte ao Estúdio IA.</div>}</div>
+      <div className="studioList">{recent.length?recent.map(x=><button type="button" className="studioListCard" key={x.id} onClick={()=>router.push(`/studio?id=${encodeURIComponent(x.id)}`)}><div className="studioListThumb">{x.thumb?<img src={x.thumb} alt="Ambiente"/>:"📷"}</div><div><b>{x.projects?.name||"Projeto"}</b><div className="muted">{x.products?.name||"Material"}</div><span className="badge">{x.status}</span></div></button>):<div className="panel empty">Você ainda não tem simulações. Crie uma no Dashboard e volte ao Estúdio IA.</div>}</div>
     </main>;
   }
   if(!sim)return <main className="login"><div className="loginbox"><b>PREVIEW Estúdio</b><p className="muted">{msg||"Carregando ambiente..."}</p><button className="secondary" onClick={()=>router.push("/dashboard")}>Voltar</button></div></main>;
