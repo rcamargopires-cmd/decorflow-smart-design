@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 function loadImage(src){
@@ -19,8 +19,6 @@ function fitSize(w,h){
 
 export default function Studio(){
   const router=useRouter();
-  const searchParams=useSearchParams();
-  const simulationId=searchParams.get("id");
   const displayRef=useRef(null),sourceRef=useRef(null),maskRef=useRef(null),lastRef=useRef(null),drawingRef=useRef(false);
   const [sim,setSim]=useState(null),[recent,setRecent]=useState(null),[originalUrl,setOriginalUrl]=useState(""),[textureUrl,setTextureUrl]=useState(""),[resultUrl,setResultUrl]=useState("");
   const [msg,setMsg]=useState(""),[busy,setBusy]=useState(false),[brush,setBrush]=useState(42),[mode,setMode]=useState("paint"),[hasMask,setHasMask]=useState(false),[slider,setSlider]=useState(50);
@@ -42,20 +40,18 @@ export default function Studio(){
 
   useEffect(()=>{(async()=>{
     try{
-      setMsg("");
       const {data:{session}}=await supabase.auth.getSession();if(!session){router.replace("/");return;}
-      if(!simulationId){
-        setSim(null);
+      const id=new URLSearchParams(window.location.search).get("id");
+      if(!id){
         const {data,error}=await supabase.from("simulations").select("*,products(name,brand),projects(name)").order("created_at",{ascending:false}).limit(24);if(error)throw error;
         const list=await Promise.all((data||[]).map(async x=>({...x,thumb:await signed(x.result_image_path?"simulation-results":"environment-photos",x.result_image_path||x.original_image_path)})));
         setRecent(list);return;
       }
-      setRecent(null);
-      const {data,error}=await supabase.from("simulations").select("*,products(*),projects(*)").eq("id",simulationId).single();if(error)throw error;setSim(data);
+      const {data,error}=await supabase.from("simulations").select("*,products(*),projects(*)").eq("id",id).single();if(error)throw error;setSim(data);
       const [o,t,r]=await Promise.all([signed("environment-photos",data.original_image_path),signed("product-textures",data.products?.texture_path),data.result_image_path?signed("simulation-results",data.result_image_path):Promise.resolve("")]);
       setOriginalUrl(o);setTextureUrl(t);setResultUrl(r);await initialize(o);
     }catch(e){setMsg(e?.message||"Não foi possível abrir o estúdio.");}
-  })()},[router,simulationId]);
+  })()},[router]);
 
   function pointFromEvent(e){const c=displayRef.current,rect=c.getBoundingClientRect();return{x:(e.clientX-rect.left)*(c.width/rect.width),y:(e.clientY-rect.top)*(c.height/rect.height)};}
   function paintLine(a,b){
@@ -99,14 +95,14 @@ export default function Studio(){
   if(recent){
     return <main className="studioPage"><div className="studioTop"><div className="studioBrand"><div className="logo">P</div><div><b>PREVIEW Estúdio IA</b><div className="muted">Escolha uma simulação para trabalhar.</div></div></div><button className="secondary" onClick={()=>router.push("/dashboard")}>← Dashboard</button></div>
       {msg&&<div className="notice">{msg}</div>}
-      <div className="studioList">{recent.length?recent.map(x=><button type="button" className="studioListCard" key={x.id} onClick={()=>router.push(`/studio?id=${encodeURIComponent(x.id)}`)}><div className="studioListThumb">{x.thumb?<img src={x.thumb} alt="Ambiente"/>:"📷"}</div><div><b>{x.projects?.name||"Projeto"}</b><div className="muted">{x.products?.name||"Material"}</div><span className="badge">{x.status}</span></div></button>):<div className="panel empty">Você ainda não tem simulações. Crie uma no Dashboard e volte ao Estúdio IA.</div>}</div>
+      <div className="studioList">{recent.length?recent.map(x=><button type="button" className="studioListCard" key={x.id} onClick={()=>window.location.assign(`/studio?id=${encodeURIComponent(x.id)}`)}><div className="studioListThumb">{x.thumb?<img src={x.thumb} alt="Ambiente"/>:"📷"}</div><div><b>{x.projects?.name||"Projeto"}</b><div className="muted">{x.products?.name||"Material"}</div><span className="badge">{x.status}</span></div></button>):<div className="panel empty">Você ainda não tem simulações. Crie uma no Dashboard e volte ao Estúdio IA.</div>}</div>
     </main>;
   }
   if(!sim)return <main className="login"><div className="loginbox"><b>PREVIEW Estúdio</b><p className="muted">{msg||"Carregando ambiente..."}</p><button className="secondary" onClick={()=>router.push("/dashboard")}>Voltar</button></div></main>;
   const product=sim.products||{};
 
   return <main className="studioPage">
-    <div className="studioTop"><div className="studioBrand"><div className="logo">P</div><div><b>PREVIEW Estúdio</b><div className="muted">{sim.projects?.name||"Projeto"} • {product.name||"Material"}</div></div></div><button className="secondary" onClick={()=>router.push("/studio")}>← Simulações</button></div>
+    <div className="studioTop"><div className="studioBrand"><div className="logo">P</div><div><b>PREVIEW Estúdio</b><div className="muted">{sim.projects?.name||"Projeto"} • {product.name||"Material"}</div></div></div><button className="secondary" onClick={()=>window.location.assign("/studio")}>← Simulações</button></div>
     {msg&&<div className="notice" style={{marginBottom:14}}>{msg}</div>}
     {resultUrl&&<section className="panel" style={{marginTop:0}}><div className="top"><div><h2>Antes × Depois</h2><div className="muted">Arraste para comparar.</div></div><span className="badge">PRONTO</span></div><div className="compareStudio"><img src={originalUrl} alt="Original"/><img src={resultUrl} alt="Resultado" className="compareAfter" style={{clipPath:`inset(0 0 0 ${slider}%)`}}/><div className="compareLine" style={{left:`${slider}%`}}/></div><input className="rangeStudio" type="range" min="0" max="100" value={slider} onChange={e=>setSlider(Number(e.target.value))}/></section>}
     <section className="studioGrid"><div className="studioCanvasWrap"><canvas ref={displayRef} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp}/><canvas ref={sourceRef} style={{display:"none"}}/><canvas ref={maskRef} style={{display:"none"}}/></div>
