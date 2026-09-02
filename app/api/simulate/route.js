@@ -16,6 +16,21 @@ function isImageFile(value){
   return value instanceof File && value.type?.startsWith("image/");
 }
 
+function detectOutputSize(bytes){
+  try{
+    // O Estúdio envia a fotografia como PNG. No PNG, largura e altura ficam no IHDR.
+    if(bytes.length >= 24 && bytes[0]===137 && bytes[1]===80 && bytes[2]===78 && bytes[3]===71){
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const width = view.getUint32(16, false);
+      const height = view.getUint32(20, false);
+      const ratio = width / Math.max(1, height);
+      if(ratio > 1.12) return "1536x1024";
+      if(ratio < 0.89) return "1024x1536";
+    }
+  }catch{}
+  return "1024x1024";
+}
+
 export async function POST(request){
   try{
     const auth = request.headers.get("authorization") || "";
@@ -35,14 +50,10 @@ export async function POST(request){
     const original = form.get("original");
     const texture = form.get("texture");
     const mask = form.get("mask");
-    const size = String(form.get("size") || "1024x1024");
 
     if(!simulationId || !isImageFile(original) || !isImageFile(texture) || !isImageFile(mask)){
       return Response.json({ok:false,message:"Foto, textura e seleção são obrigatórias."},{status:400});
     }
-
-    const allowedSizes = new Set(["1024x1024","1536x1024","1024x1536"]);
-    const outputSize = allowedSizes.has(size) ? size : "1024x1024";
 
     const {data:simulation,error:simError} = await db
       .from("simulations")
@@ -84,6 +95,7 @@ O resultado deve parecer uma fotografia real do MESMO ambiente após a troca do 
     const originalBytes = new Uint8Array(await original.arrayBuffer());
     const textureBytes = new Uint8Array(await texture.arrayBuffer());
     const maskBytes = new Uint8Array(await mask.arrayBuffer());
+    const outputSize = detectOutputSize(originalBytes);
 
     const result = await generateImage({
       model:"openai/gpt-image-2",
@@ -104,7 +116,8 @@ O resultado deve parecer uma fotografia real do MESMO ambiente após a troca do 
     return Response.json({
       ok:true,
       image:`data:${image.mediaType || "image/png"};base64,${image.base64}`,
-      model:"openai/gpt-image-2"
+      model:"openai/gpt-image-2",
+      size:outputSize
     });
   }catch(error){
     console.error("PREVIEW_SIMULATE_ERROR",error);
